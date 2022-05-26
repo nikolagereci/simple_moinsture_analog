@@ -1,5 +1,5 @@
 {
-    "name": "simple_moinsture_analog",
+    "name": "simple_moisture_analog",
     "description": "",
     "dependencies": {
         "core": "*",
@@ -9,17 +9,18 @@
     "files": [
         "main.blocks",
         "main.ts",
-        "README.md"
+        "README.md",
+        "main.py"
     ],
     "testFiles": [
         "test.ts"
     ],
     "targetVersions": {
-        "target": "4.0.16",
+        "target": "4.0.18",
         "targetId": "microbit"
     },
     "supportedTargets": [
         "microbit"
     ],
-    "preferredEditor": "blocksprj"
+    "preferredEditor": "pyprj"
 }
