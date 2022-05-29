@@ -1,71 +1,54 @@
-led.setBrightness(8)
-
-class Normalizer{
-    private size: number;               //field length
-    private normalized_val: number;     //calculated normalized value
-    private Q: number[];
-
-    constructor(s: number){
-        this.size = s;
-        this.normalized_val = 0;
-        for (let i=0; i < this.size; i++){
-            this.Q[i] = 1023;
-        }
+//  /add a reading and return the normalized value 
+function add_reading(x: number, size: number, Q: number[]): number {
+    if (Q.length == size) {
+        Q.shift()
     }
+    Q.push(x)
+    let sum2 = 0
+    Q.forEach(function on_for_each(item: any, index: any) {
 
-    ///add a reading and return the normalized value 
-    add_reading(x: number){
-        if (this.Q.length == this.size){
-            this.Q.shift();
-        }
-        this.Q.push(x);
-        let sum = 0;
-        this.Q.forEach(function(item, index){
-            sum += item;
-        });
-        this.normalized_val = sum / this.Q.length;
-        return this.normalized_val;
+        sum2 += item
+    })
+    let normalized_val = sum2 / Q.length
+    return normalized_val
+}
+
+function read_moisture_sensor(pause_period: number, size: number, Q: number[]) {
+    pins.analogWritePin(AnalogPin.P0, 1023);
+    let reading = pins.analogReadPin(AnalogPin.P1);
+    //dry soil should cause reduced value
+    pins.analogWritePin(AnalogPin.P0, 0);
+    basic.showString("R" + reading.toString());
+    let normalized_val = add_reading(reading, size, Q);
+    basic.pause(pause_period);
+    basic.showString("N" + normalized_val.toString());
+    return normalized_val;
+}
+
+function water(watering_period: number, size2: number, Q2: number[]) {
+    pins.digitalWritePin(DigitalPin.P2, 0);
+    basic.pause(watering_period);
+    pins.digitalWritePin(DigitalPin.P2, 1);
+    for (let i = 0; i < size2; i++) {
+        Q2[i] = 1023
     }
 }
 
-namespace watering {
-
+basic.forever(function on_forever() {
+    let size2 = 30
+    let Q2 = []
     let threshold = 800;
     let watering_period = 60000; //default watering period is one minute
     let pause_period = 5000;
-    let normalizer: Normalizer;
-    export function init(){
-        normalizer = new Normalizer(30);
+    for (let i = 0; i < size2; i++) {
+        Q2[i] = 1023
     }
-
-    function read_moisture_sensor() {
-        pins.analogWritePin(AnalogPin.P0, 1023);
-        let reading = pins.analogReadPin(AnalogPin.P1);
-        //dry soil should cause reduced value
-        pins.analogWritePin(AnalogPin.P0, 0);
-        basic.showString("R" + reading.toString());
-        let normalized_val = normalizer.add_reading(reading);
-        basic.pause(pause_period);
-        basic.showString("N" + normalized_val.toString());
-        return normalized_val;
-    }
-
-    function water() {
-        pins.digitalWritePin(DigitalPin.P1, 0);
-        basic.pause(watering_period);
-        pins.digitalWritePin(DigitalPin.P1, 1);
-    }
-
-    basic.forever(function on_forever() {
-        //turn off pump by default
-        pins.digitalWritePin(DigitalPin.P1, 1);
-
-        let normalized_val = read_moisture_sensor();
+    //turn off pump by default
+    pins.digitalWritePin(DigitalPin.P2, 1);
+    while (true) {
+        let normalized_val = read_moisture_sensor(pause_period, size2, Q2);
         if (normalized_val < threshold) {
-            water();
+            water(watering_period, size2, Q2);
         }
-    })
-}
-
-
-
+    }
+})
